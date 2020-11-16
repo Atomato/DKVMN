@@ -149,14 +149,57 @@ def test_one_dataset(params, file_name, test_q_data, test_qa_data):
     test_loss, test_accuracy, test_auc = test(test_net, params, test_q_data, test_qa_data, label='Test')
     log_info = "\ntest_auc:\t{}\ntest_accuracy:\t{}\ntest_loss:\t{}\n".format(test_auc, test_accuracy, test_loss)
     print(log_info)
-    f_save_log = open(os.path.join('result', params.save, file_name), 'a')
-    f_save_log.write(log_info)
+    # f_save_log = open(os.path.join('result', params.save, file_name), 'a')
+    # f_save_log.write(log_info)
+
+def test_one_dataset_cluster(params, file_name, test_q_data, test_qa_data):
+    print("\n\nStart testing ......................")
+    g_model = MODEL(n_question=params.n_question,
+                    seqlen=params.seqlen,
+                    batch_size=params.batch_size,
+                    q_embed_dim=params.q_embed_dim,
+                    qa_embed_dim=params.qa_embed_dim,
+                    memory_size=params.memory_size,
+                    memory_key_state_dim=params.memory_key_state_dim,
+                    memory_value_state_dim=params.memory_value_state_dim,
+                    final_fc_dim=params.final_fc_dim)
+
+    all_layers = g_model.sym_gen().get_internals()
+    cw_sym = all_layers['softmaxactivation0_output']
+    # create a module by given a Symbol
+    cw_net = mx.mod.Module(symbol=cw_sym,
+                             data_names=['q_data'],
+                             label_names=None,
+                             context=params.ctx)
+
+    # cresate memory by given input shapes
+    cw_net.bind(data_shapes=[
+        mx.io.DataDesc(name='q_data', shape=(params.seqlen, params.batch_size), layout='SN')])
+    arg_params, aux_params = load_params(prefix=os.path.join('model', params.load, file_name),
+                                         epoch=100)
+    cw_net.init_params(arg_params=arg_params, aux_params=aux_params,
+                         allow_missing=False)
+    
+    input_q = mx.nd.zeros([200, 32])
+
+    with open("correlation_weight.txt", "w") as f:
+        for i in range(4):
+            input_q[0, :] = mx.nd.arange(1 + i * params.batch_size, 33 + i * params.batch_size)
+            print('\n', input_q[0])
+
+            data_batch = mx.io.DataBatch(data=[input_q], label=[])
+            cw_net.forward(data_batch, is_train=False)
+            correlation_weight = cw_net.get_outputs()[0].asnumpy()
+
+            for j, cw in enumerate(correlation_weight):
+                f.write(str(j + i * params.batch_size + 1) + '\n')
+                f.write(','.join(list(map(lambda x: str(x), cw.tolist()))) + '\n')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Script to test KVMN.')
-    parser.add_argument('--gpus', type=str, default='0', help='the gpus will be used, e.g "0,1,2,3"')
+    parser.add_argument('--gpus', type=str, default=None, help='the gpus will be used, e.g "0,1,2,3"')
     parser.add_argument('--max_iter', type=int, default=100, help='number of iterations')
-    parser.add_argument('--test', type=bool, default=False, help='enable testing')
+    parser.add_argument('--test', type=bool, default=True, help='enable testing')
     parser.add_argument('--train_test', type=bool, default=True, help='enable testing')
     parser.add_argument('--show', type=bool, default=True, help='print progress')
     parser.add_argument('--seedNum', type=int, default=1024, help='the random seed')
@@ -296,4 +339,5 @@ if __name__ == '__main__':
                     '_lr' + str(params.init_lr) + '_gn' + str(params.maxgradnorm) + \
                     '_f' + str(params.final_fc_dim) + '_s' + str(seedNum)
 
-        test_one_dataset(params, file_name, test_q_data, test_qa_data)
+        # test_one_dataset(params, file_name, test_q_data, test_qa_data)
+        test_one_dataset_cluster(params, file_name, test_q_data, test_qa_data)
