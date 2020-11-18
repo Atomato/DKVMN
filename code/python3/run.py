@@ -184,3 +184,75 @@ def test(net, params, q_data, qa_data, label):
     accuracy = compute_accuracy(all_target, all_pred)
 
     return loss, accuracy, auc
+
+def test_graph(net, params, q_data, qa_data, label):
+    # dataArray: [ array([[],[],..])] Shape: (3633, 200)
+    N = int(math.ceil(float(len(q_data)) / float(params.batch_size)))
+    q_data = q_data.T  # Shape: (200,3633)
+    qa_data = qa_data.T  # Shape: (200,3633)
+    seq_num = q_data.shape[1]
+    pred_list = []
+    target_list = []
+    if params.show:
+        from utils import ProgressBar
+        bar = ProgressBar(label, max=N)
+
+    count = 0
+    element_count = 0
+    for idx in range(N):
+        if params.show: bar.next()
+
+        inds = np.arange(idx * params.batch_size, (idx + 1) * params.batch_size)
+        q_one_seq = q_data.take(inds, axis=1, mode='wrap')
+        qa_one_seq = qa_data.take(inds, axis=1, mode='wrap')
+        #print 'seq_num', seq_num
+
+        input_q = q_one_seq[:, :]  # Shape (seqlen, batch_size)
+        input_qa = qa_one_seq[:, :]  # Shape (seqlen, batch_size)
+        target = qa_one_seq[:, :]
+        #target = target.astype(np.int)
+        #target = (target - 1) / params.n_question
+        #target = target.astype(np.float)  # correct: 1.0; wrong 0.0; padding -1.0
+        target = (target - 1) / params.n_question
+        target = np.floor(target)
+
+        input_q = mx.nd.array(input_q)
+        input_qa = mx.nd.array(input_qa)
+        target = mx.nd.array(target)
+
+        data_batch = mx.io.DataBatch(data=[input_q, input_qa], label=[])
+        net.forward(data_batch, is_train=False)
+        pred = net.get_outputs()[0].asnumpy()
+        target = target.asnumpy()
+        if (idx + 1) * params.batch_size > seq_num:
+            real_batch_size = seq_num - idx * params.batch_size
+            target = target[:, :real_batch_size]
+            pred = pred.reshape((params.seqlen, params.batch_size))[:, :real_batch_size]
+            pred = pred.reshape((-1,))
+            count += real_batch_size
+        else:
+            count += params.batch_size
+
+        target = target.reshape((-1,))  # correct: 1.0; wrong 0.0; padding -1.0
+        nopadding_index = np.flatnonzero(target != -1.0)
+        nopadding_index = nopadding_index.tolist()
+        pred_nopadding = pred[nopadding_index]
+        target_nopadding = target[nopadding_index]
+
+        pred_size = pred_nopadding.size
+        pred_second_step = pred_nopadding[int(pred_size/2):]
+
+        element_count += pred_nopadding.shape[0]
+        #print avg_loss
+        # pred_list.append(pred_nopadding)
+        pred_list.append(pred_second_step)
+        target_list.append(target_nopadding)
+
+    if params.show: bar.finish()
+    assert count == seq_num
+
+    all_pred = np.concatenate(pred_list, axis=0)
+
+    with open("conditional_prob.txt", "w") as f:
+        for pred in all_pred:
+            f.write(str(pred) + "\n")

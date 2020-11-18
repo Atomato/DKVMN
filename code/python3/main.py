@@ -8,7 +8,7 @@ import numpy as np
 
 from load_data import DATA
 from model import MODEL
-from run import train, test
+from run import train, test, test_graph
 
 root = logging.getLogger()
 root.setLevel(logging.DEBUG)
@@ -146,22 +146,24 @@ def test_one_dataset(params, file_name, test_q_data, test_qa_data):
                                          epoch=100)
     test_net.init_params(arg_params=arg_params, aux_params=aux_params,
                          allow_missing=False)
-    test_loss, test_accuracy, test_auc = test(test_net, params, test_q_data, test_qa_data, label='Test')
-    log_info = "\ntest_auc:\t{}\ntest_accuracy:\t{}\ntest_loss:\t{}\n".format(test_auc, test_accuracy, test_loss)
-    print(log_info)
-    f_save_log = open(os.path.join('result', params.save, file_name), 'a')
-    f_save_log.write(log_info)
+    # # test_loss, test_accuracy, test_auc = test(test_net, params, test_q_data, test_qa_data, label='Test')
+    # log_info = "\ntest_auc:\t{}\ntest_accuracy:\t{}\ntest_loss:\t{}\n".format(test_auc, test_accuracy, test_loss)
+    # print(log_info)
+    # f_save_log = open(os.path.join('result', params.save, file_name), 'a')
+    # f_save_log.write(log_info)
+
+    test_graph(test_net, params, test_q_data, test_qa_data, label='Test')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Script to test KVMN.')
-    parser.add_argument('--gpus', type=str, default='0', help='the gpus will be used, e.g "0,1,2,3"')
+    parser.add_argument('--gpus', type=str, default=None, help='the gpus will be used, e.g "0,1,2,3"')
     parser.add_argument('--max_iter', type=int, default=100, help='number of iterations')
-    parser.add_argument('--test', type=bool, default=False, help='enable testing')
+    parser.add_argument('--test', type=bool, default=True, help='enable testing')
     parser.add_argument('--train_test', type=bool, default=True, help='enable testing')
     parser.add_argument('--show', type=bool, default=True, help='print progress')
     parser.add_argument('--seedNum', type=int, default=1024, help='the random seed')
 
-    dataset = "assist2009_updated"  # synthetic / assist2009_updated / assist2015 / KDDal0506 / STATICS
+    dataset = "synthetic"  # synthetic / assist2009_updated / assist2015 / KDDal0506 / STATICS
 
     if dataset == "synthetic":
         parser.add_argument('--batch_size', type=int, default=32, help='the batch size')
@@ -288,7 +290,7 @@ if __name__ == '__main__':
     else:
         params.memory_key_state_dim = params.q_embed_dim
         params.memory_value_state_dim = params.qa_embed_dim
-        test_data_path = params.data_dir + "/" + params.data_name  +"_test.csv"
+        test_data_path = params.data_dir + "/" + params.data_name  +"_test_graph.csv"
         test_q_data, test_qa_data = dat.load_data(test_data_path)
         file_name = 'b' + str(params.batch_size) + \
                     '_q' + str(params.q_embed_dim) + '_qa' + str(params.qa_embed_dim) + \
