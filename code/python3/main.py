@@ -180,12 +180,11 @@ def test_one_dataset_cluster(params, file_name, test_q_data, test_qa_data):
     cw_net.init_params(arg_params=arg_params, aux_params=aux_params,
                          allow_missing=False)
     
-    input_q = mx.nd.zeros([200, 32])
+    input_q = mx.nd.zeros([params.seqlen, 32])
 
     with open("correlation_weight.txt", "w") as f:
         for i in range(4):
             input_q[0, :] = mx.nd.arange(1 + i * params.batch_size, 33 + i * params.batch_size)
-            print('\n', input_q[0])
 
             data_batch = mx.io.DataBatch(data=[input_q], label=[])
             cw_net.forward(data_batch, is_train=False)
