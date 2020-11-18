@@ -4,4 +4,4 @@ code/python3/result/assist2009_updated/
 *.xml
 code/python2/model/*
 code/python3/model/*
-
+.vscode/
