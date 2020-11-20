@@ -8,12 +8,13 @@ Dynamic Key-Value Memory Networks for Knowledge Tracing
 * Both Python2 and Python3 are supported
 
 ### Prerequisites
+
 * [progress](https://pypi.python.org/pypi/progress) - Dependency package
 
 ## Model Architecture
 
-![DKVMN Architecture](https://github.com/jennyzhang0215/DKVMN/blob/master/DKVMN_architecture.png)
-![DKVMN Code](https://github.com/jennyzhang0215/DKVMN/blob/master/DKVMN_code.png)
+![DKVMN Architecture](https://raw.githubusercontent.com/jennyzhang0215/DKVMN/master/DKVMN_architecture.png)
+![DKVMN Code](https://raw.githubusercontent.com/jennyzhang0215/DKVMN/master/DKVMN_code.png)
 
 ### Data format
 
@@ -21,7 +22,7 @@ The first line is the number of exercises a student attempted.
 The second line is the exercise tag sequence.
 The third line is the response sequence.
 
- ```
+ ```csv
     15
     1,1,1,1,7,7,9,10,10,10,10,11,11,45,54
     0,1,1,1,1,1,0,0,1,1,1,1,1,0,0
@@ -63,15 +64,15 @@ The third line is the response sequence.
 
 --save: path to save model
 
-
-
 ### Training
- ```
+
+ ```shell
  python main.py --gpus 0
  ```
 
 ### Testing
- ```
+
+ ```shell
  python main.py --gpus 0 --test True
  ```
 
@@ -79,4 +80,3 @@ The third line is the response sequence.
 
 Jiani Zhang, Xingjian Shi, Irwin King, Dit-Yan Yeung. [Dynamic Key-Value Memory Networks for Knowledge Tracing](http://papers.www2017.com.au.s3-website-ap-southeast-2.amazonaws.com/proceedings/p765.pdf).
 In Proceedings of the 26th International Conference on World Wide Web, 2017: 765-774.
-
