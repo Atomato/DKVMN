@@ -1,7 +1,5 @@
-code/python3/model/
-code/python3/__pycache__/
-code/python3/result/assist2009_updated/
+model/
+result/
+__pycache__/
 *.xml
-code/python2/model/*
-code/python3/model/*
 .vscode/

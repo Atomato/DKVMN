@@ -196,7 +196,9 @@ def test_one_dataset_cluster(params, file_name, test_q_data, test_qa_data):
 
     input_q = mx.nd.zeros([params.seqlen, 32])
 
-    with open("correlation_weight.txt", "w") as f:
+    if not os.path.isdir('result'):
+        os.makedirs('result')
+    with open('result/skill_embedding.txt', 'w') as f:
         for i in range(4):
             input_q[0, :] = mx.nd.arange(
                 1 + i * params.batch_size, 33 + i * params.batch_size)
@@ -256,7 +258,7 @@ if __name__ == '__main__':
         parser.add_argument('--seqlen', type=int, default=50,
                             help='the allowed maximum length of a sequence')
         parser.add_argument(
-            '--data_dir', type=str, default='../../data/synthetic', help='data directory')
+            '--data_dir', type=str, default='data/synthetic', help='data directory')
         parser.add_argument('--data_name', type=str,
                             default='naive_c5_q50_s4000_v1', help='data set name')
         parser.add_argument('--load', type=str,
@@ -291,7 +293,7 @@ if __name__ == '__main__':
         parser.add_argument('--seqlen', type=int, default=200,
                             help='the allowed maximum length of a sequence')
         parser.add_argument(
-            '--data_dir', type=str, default='../../data/assist2009_updated', help='data directory')
+            '--data_dir', type=str, default='data/assist2009_updated', help='data directory')
         parser.add_argument('--data_name', type=str,
                             default='assist2009_updated', help='data set name')
         parser.add_argument(
@@ -326,7 +328,7 @@ if __name__ == '__main__':
         parser.add_argument('--seqlen', type=int, default=200,
                             help='the allowed maximum length of a sequence')
         parser.add_argument(
-            '--data_dir', type=str, default='../../data/assist2015', help='data directory')
+            '--data_dir', type=str, default='data/assist2015', help='data directory')
         parser.add_argument('--data_name', type=str,
                             default='assist2015', help='data set name')
         parser.add_argument('--load', type=str,
@@ -361,7 +363,7 @@ if __name__ == '__main__':
         parser.add_argument('--seqlen', type=int, default=200,
                             help='the allowed maximum length of a sequence')
         parser.add_argument('--data_dir', type=str,
-                            default='../../data/STATICS', help='data directory')
+                            default='data/STATICS', help='data directory')
         parser.add_argument('--data_name', type=str,
                             default='STATICS', help='data set name')
         parser.add_argument('--load', type=str,

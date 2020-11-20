@@ -1,10 +1,11 @@
 # %%
 import matplotlib.pyplot as plt
+import numpy as np
 from sklearn.manifold import TSNE
 from sklearn import metrics
 from sklearn.cluster import KMeans
-import numpy as np
-import base
+
+from base import dunn
 
 dataset = "assist2009_updated"
 label_type = "k_means"  # k_means, argmax, ground_truth
@@ -19,7 +20,7 @@ elif dataset == "assist2009_updated":
     if label_type == "ground_truth":
         label_dict = {}
         label_list = []
-        with open("../../data/assist2009_updated/clustered_skill_name.txt", "r") as f:
+        with open("data/assist2009_updated/clustered_skill_name.txt", "r") as f:
             for line in f.readlines():
                 row = line.strip().split("\t")
                 label_dict[int(row[1])] = int(row[0])
@@ -28,7 +29,7 @@ elif dataset == "assist2009_updated":
                 label_list.append(label_dict[i])
         label_list = np.array(label_list)
 
-with open("correlation_weight.txt", "r") as f:
+with open("result/skill_embedding.txt", "r") as f:
     lines = f.readlines()
 
 data = []
@@ -77,7 +78,7 @@ for label in cluster:
     print(cluster[label], "\n")
 
 # %% [markdown]
-# # Metrices
+# # Metrics
 
 # %%
 print("Dunn")
@@ -86,7 +87,7 @@ for d, label in zip(data, label_list):
     if label not in k_list.keys():
         k_list[label] = []
     k_list[label].append(d)
-print(base.dunn(list(k_list.values())))
+print(dunn(list(k_list.values())))
 
 print("Silhouettes")
 metrics.silhouette_score(data, label_list, metric='euclidean')
