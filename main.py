@@ -166,8 +166,8 @@ def test_one_dataset(params, file_name, test_q_data, test_qa_data):
     # f_save_log.write(log_info)
 
 
-def test_one_dataset_cluster(params, file_name, test_q_data, test_qa_data):
-    print("\n\nStart testing ......................")
+def embede_skill(params, file_name, test_q_data, test_qa_data):
+    print("\n\nStart embedding ......................")
     g_model = MODEL(n_question=params.n_question,
                     seqlen=params.seqlen,
                     batch_size=params.batch_size,
@@ -218,8 +218,8 @@ if __name__ == '__main__':
                         help='the gpus will be used, e.g "0,1,2,3"')
     parser.add_argument('--max_iter', type=int, default=100,
                         help='number of iterations')
-    parser.add_argument('--test', type=bool, default=True,
-                        help='enable testing')
+    parser.add_argument('--mode', type=str, default='train',
+                        help='run mode, e.g. train, test, embed')
     parser.add_argument('--train_test', type=bool,
                         default=True, help='enable testing')
     parser.add_argument('--show', type=bool, default=True,
@@ -388,9 +388,10 @@ if __name__ == '__main__':
     # Read data
     dat = DATA(n_question=params.n_question,
                seqlen=params.seqlen, separate_char=',')
+
     seedNum = params.seedNum
     np.random.seed(seedNum)
-    if not params.test:
+    if params.mode == 'train':
         params.memory_key_state_dim = params.q_embed_dim
         params.memory_value_state_dim = params.qa_embed_dim
         d = vars(params)
@@ -419,7 +420,7 @@ if __name__ == '__main__':
             test_data_path = params.data_dir + "/" + params.data_name + "_test.csv"
             test_q_data, test_qa_data = dat.load_data(test_data_path)
             test_one_dataset(params, file_name, test_q_data, test_qa_data)
-    else:
+    elif params.mode == 'test':
         params.memory_key_state_dim = params.q_embed_dim
         params.memory_value_state_dim = params.qa_embed_dim
         test_data_path = params.data_dir + "/" + params.data_name + "_test.csv"
@@ -430,5 +431,15 @@ if __name__ == '__main__':
                     '_lr' + str(params.init_lr) + '_gn' + str(params.maxgradnorm) + \
                     '_f' + str(params.final_fc_dim) + '_s' + str(seedNum)
 
-        # test_one_dataset(params, file_name, test_q_data, test_qa_data)
-        test_one_dataset_cluster(params, file_name, test_q_data, test_qa_data)
+        test_one_dataset(params, file_name, test_q_data, test_qa_data)
+    elif params.mode == 'embed':
+        params.memory_key_state_dim = params.q_embed_dim
+        params.memory_value_state_dim = params.qa_embed_dim
+        test_data_path = params.data_dir + "/" + params.data_name + "_test.csv"
+        test_q_data, test_qa_data = dat.load_data(test_data_path)
+        file_name = 'b' + str(params.batch_size) + \
+                    '_q' + str(params.q_embed_dim) + '_qa' + str(params.qa_embed_dim) + \
+                    '_m' + str(params.memory_size) + '_std' + str(params.init_std) + \
+                    '_lr' + str(params.init_lr) + '_gn' + str(params.maxgradnorm) + \
+                    '_f' + str(params.final_fc_dim) + '_s' + str(seedNum)
+        embede_skill(params, file_name, test_q_data, test_qa_data)

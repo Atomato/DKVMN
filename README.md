@@ -10,6 +10,7 @@ Dynamic Key-Value Memory Networks for Knowledge Tracing
 ### Prerequisites
 
 * [progress](https://pypi.python.org/pypi/progress) - Dependency package
+* [scikit-learn](https://pypi.org/project/scikit-learn/) - Dependency package
 
 ## Model Architecture
 
@@ -73,8 +74,15 @@ The third line is the response sequence.
 ### Testing
 
  ```shell
- python main.py --gpus 0 --test True
+ python main.py --gpus 0 --mode test
  ```
+
+### Embedding
+
+```shell
+python main.py --gpus 0 --mode embed
+python tsne.py
+```
 
 ## Reference Paper
 
