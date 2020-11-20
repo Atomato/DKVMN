@@ -41,7 +41,7 @@ def load_params(prefix, epoch):
     return arg_params, aux_params
 
 
-def train_one_dataset(params, file_name, train_q_data, train_qa_data, valid_q_data, valid_qa_data):
+def train_one_dataset(params, file_name, train_q_data, train_qa_data, valid_q_data, valid_qa_data, mode='train'):
     # ================================== model initialization ==================================
     g_model = MODEL(n_question=params.n_question,
                     seqlen=params.seqlen,
@@ -82,6 +82,8 @@ def train_one_dataset(params, file_name, train_q_data, train_qa_data, valid_q_da
     all_valid_accuracy = {}
     all_valid_auc = {}
     best_valid_auc = 0
+    best_train_loss = 100
+    best_epoch = 1
 
     for idx in range(params.max_iter):
         train_loss, train_accuracy, train_auc = train(
@@ -107,14 +109,24 @@ def train_one_dataset(params, file_name, train_q_data, train_qa_data, valid_q_da
         all_valid_accuracy[idx + 1] = valid_accuracy
         all_train_accuracy[idx + 1] = train_accuracy
 
-        # output the epoch with the best validation auc
-        if valid_auc > best_valid_auc:
-            best_valid_auc = valid_auc
-            best_epoch = idx+1
-            # here the epoch is default, set to be 100
-            # we only save the model in the epoch with the better results
-            net.save_checkpoint(prefix=os.path.join(
-                'model', params.save, file_name), epoch=100)
+        if mode == 'train':
+            # output the epoch with the best validation auc
+            if valid_auc > best_valid_auc:
+                best_valid_auc = valid_auc
+                best_epoch = idx + 1
+                # here the epoch is default, set to be 100
+                # we only save the model in the epoch with the better results
+                net.save_checkpoint(prefix=os.path.join(
+                    'model', params.save, file_name), epoch=100)
+        elif mode == 'embed_train':
+            # output the epoch with the best train loss
+            if train_loss < best_train_loss:
+                best_train_loss = train_loss
+                best_epoch = idx + 1
+                # here the epoch is default, set to be 100
+                # we only save the model in the epoch with the better results
+                net.save_checkpoint(prefix=os.path.join(
+                    'model', params.save, file_name), epoch=100)
 
     if not os.path.isdir('result'):
         os.makedirs('result')
@@ -166,7 +178,7 @@ def test_one_dataset(params, file_name, test_q_data, test_qa_data):
     # f_save_log.write(log_info)
 
 
-def embede_skill(params, file_name, test_q_data, test_qa_data):
+def embed_skill(params, file_name):
     print("\n\nStart embedding ......................")
     g_model = MODEL(n_question=params.n_question,
                     seqlen=params.seqlen,
@@ -219,7 +231,7 @@ if __name__ == '__main__':
     parser.add_argument('--max_iter', type=int, default=100,
                         help='number of iterations')
     parser.add_argument('--mode', type=str, default='train',
-                        help='run mode, e.g. train, test, embed')
+                        help='run mode, e.g. train, test, embed_train, embed')
     parser.add_argument('--train_test', type=bool,
                         default=True, help='enable testing')
     parser.add_argument('--show', type=bool, default=True,
@@ -391,9 +403,7 @@ if __name__ == '__main__':
 
     seedNum = params.seedNum
     np.random.seed(seedNum)
-    if params.mode == 'train':
-        params.memory_key_state_dim = params.q_embed_dim
-        params.memory_value_state_dim = params.qa_embed_dim
+    if params.mode == 'train' or params.mode == 'embed_train':
         d = vars(params)
         for key in d:
             print('\t', key, '\t', d[key])
@@ -402,7 +412,10 @@ if __name__ == '__main__':
                     '_m' + str(params.memory_size) + '_std' + str(params.init_std) + \
                     '_lr' + str(params.init_lr) + '_gn' + str(params.maxgradnorm) + \
                     '_f' + str(params.final_fc_dim)+'_s'+str(seedNum)
-        train_data_path = params.data_dir + "/" + params.data_name + "_train1.csv"
+        if params.mode == 'train':
+            train_data_path = params.data_dir + "/" + params.data_name + "_train1.csv"
+        else:  # mode is embed_train
+            train_data_path = params.data_dir + "/" + params.data_name + ".csv"
         valid_data_path = params.data_dir + "/" + params.data_name + "_valid1.csv"
         train_q_data, train_qa_data = dat.load_data(train_data_path)
         valid_q_data, valid_qa_data = dat.load_data(valid_data_path)
@@ -415,14 +428,12 @@ if __name__ == '__main__':
         print("valid_qa_data.shape", valid_qa_data.shape)  # (1566, 200)
         print("\n")
         best_epoch = train_one_dataset(
-            params, file_name, train_q_data, train_qa_data, valid_q_data, valid_qa_data)
+            params, file_name, train_q_data, train_qa_data, valid_q_data, valid_qa_data, params.mode)
         if params.train_test:
             test_data_path = params.data_dir + "/" + params.data_name + "_test.csv"
             test_q_data, test_qa_data = dat.load_data(test_data_path)
             test_one_dataset(params, file_name, test_q_data, test_qa_data)
     elif params.mode == 'test':
-        params.memory_key_state_dim = params.q_embed_dim
-        params.memory_value_state_dim = params.qa_embed_dim
         test_data_path = params.data_dir + "/" + params.data_name + "_test.csv"
         test_q_data, test_qa_data = dat.load_data(test_data_path)
         file_name = 'b' + str(params.batch_size) + \
@@ -433,8 +444,6 @@ if __name__ == '__main__':
 
         test_one_dataset(params, file_name, test_q_data, test_qa_data)
     elif params.mode == 'embed':
-        params.memory_key_state_dim = params.q_embed_dim
-        params.memory_value_state_dim = params.qa_embed_dim
         test_data_path = params.data_dir + "/" + params.data_name + "_test.csv"
         test_q_data, test_qa_data = dat.load_data(test_data_path)
         file_name = 'b' + str(params.batch_size) + \
@@ -442,4 +451,4 @@ if __name__ == '__main__':
                     '_m' + str(params.memory_size) + '_std' + str(params.init_std) + \
                     '_lr' + str(params.init_lr) + '_gn' + str(params.maxgradnorm) + \
                     '_f' + str(params.final_fc_dim) + '_s' + str(seedNum)
-        embede_skill(params, file_name, test_q_data, test_qa_data)
+        embed_skill(params, file_name)
