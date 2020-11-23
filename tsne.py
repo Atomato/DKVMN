@@ -58,8 +58,6 @@ transformed = model.fit_transform(data)
 
 xs = transformed[:, 0]
 ys = transformed[:, 1]
-
-# %%
 plt.scatter(xs, ys, c=label_list)
 
 for i in range(n_question):
